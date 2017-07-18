@@ -367,7 +367,21 @@
 				on(x+2, y+12); on(x+3, y+12); on(x+4, y+12); on(x+8, y+12); on(x+9, y+12); on(x+10, y+12);
 			}
 
-			function commands() { return "==================[ Commands ]==================\ncommands(), pause(), play(), empty(),\n\nspeed(ms), cell_size(px), on/off(x, y),\ngrid_width(cells), grid_height(cells),\n  (changing grid size deletes all cells)\n\nr_pentomino(x, y), diehard(x, y), acorn(x, y),\n\npulsar(x, y)\n================================================"; };
+			function init_x() {
+				cell_size(1);
+				grid_width(600);
+				grid_height(600);
+				for (var x=0; x<game.width; x++) {
+					for (var y=0; y<game.height; y++) {
+						// For each cell
+						if (y == x) { on(x, y); }
+						if (y == -x+game.height-1) { on(x, y); }
+					}
+				}
+				return "Might lag..."
+			}
+
+			function commands() { return "==================[ Commands ]==================\ncommands(), pause(), play(), empty(),\n\nspeed(ms), cell_size(px), on/off(x, y),\ngrid_width(cells), grid_height(cells),\n  (changing grid size deletes all cells)\n\nr_pentomino(x, y), diehard(x, y), acorn(x, y),\n\npulsar(x, y)\n\ninit_x()\n================================================"; };
 
 			console.log("▄▄▄▄·  ▄· ▄▌    • ▌ ▄ ·.  ▄▄▄· ▄ •▄ ▪  \n▐█ ▀█▪▐█▪██▌    ·██ ▐███▪▐█ ▀█ █▌▄▌▪██ \n▐█▀▀█▄▐█▌▐█▪    ▐█ ▌▐▌▐█·▄█▀▀█ ▐▀▀▄·▐█·\n██▄▪▐█ ▐█▀·.    ██ ██▌▐█▌▐█ ▪▐▌▐█.█▌▐█▌\n·▀▀▀▀   ▀ •     ▀▀  █▪▀▀▀ ▀  ▀ ·▀  ▀▀▀▀\nMy remake of Conway's Game of Life!\n\nCurrent game settings:\n  Speed: "+(1000/game.speed).toFixed(2)+" fps ("+game.speed.toFixed(2)+"ms), Cell size: "+game.size+"px,\n  Grid Width: "+game.width+" cells, Grid Height: "+game.height+" cells,\n\n"+commands()+"\n\n");
 
