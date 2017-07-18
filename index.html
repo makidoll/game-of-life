@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Conway's Game of Life</title>
+		<link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+		<style type="text/css">
+			body {
+				background-color: #101010;
+				font-family: "Roboto Mono";
+				color: #ffffff;
+				text-align: center;
+			}
+
+			#view, #title, #sub-title {
+				position: fixed; margin: auto;
+				left: 0; right: 0;
+			}
+
+			#title, #sub-title { width: 100%; height: 100px; }
+			#title { top: 0; bottom: 720px; }
+			#sub-title { bottom: 0; top: 720px; }
+
+			#view {
+				top: 0; bottom: 0;
+				background-color: #000000;
+				border: solid 8px rgba(255, 255, 255, 0.15);
+			}
+		</style>
+	</head>
+	<body>
+		<div id="title"><pre>
+ ▄▄ •  ▄▄▄· • ▌ ▄ ·. ▄▄▄ .          ·▄▄▄    ▄▄▌  ▪  ·▄▄▄▄▄▄ .
+▐█ ▀ ▪▐█ ▀█ ·██ ▐███▪▀▄.▀·    ▪     ▐▄▄·    ██•  ██ ▐▄▄·▀▄.▀·
+▄█ ▀█▄▄█▀▀█ ▐█ ▌▐▌▐█·▐▀▀▪▄     ▄█▀▄ ██▪     ██▪  ▐█·██▪ ▐▀▀▪▄
+▐█▄▪▐█▐█ ▪▐▌██ ██▌▐█▌▐█▄▄▌    ▐█▌.▐▌██▌.    ▐█▌▐▌▐█▌██▌.▐█▄▄▌
+·▀▀▀▀  ▀  ▀ ▀▀  █▪▀▀▀ ▀▀▀      ▀█▄▀▪▀▀▀     .▀▀▀ ▀▀▀▀▀▀  ▀▀▀ 
+		</pre></div>
+		<div id="sub-title"><p>Press CTRL+Shift+J to open the Chrome DevTools console</p></div>
+		<canvas id="view"></canvas>			
+		<script type="text/javascript">
+			// ----------------
+			// Global Variables
+			// ----------------
+
+			var canv = document.getElementById("view");
+			var ctx = canv.getContext("2d"); 
+
+			var game = {
+				width: 100, // Cells on screen
+				height: 100, // ^
+				size: 6, // Physical pixel size
+				speed: 1000/24, // Milliseconds
+				cells: [],
+				mem_cells: []
+			};
+
+			// ------------
+			// Initializers
+			// ------------
+
+			canv.width = game.width * game.size;
+			canv.height = game.height * game.size;
+
+			function init_cells(cells) {
+				for (var x=0; x<game.width; x++) {
+					cells[x] = [];
+					for (var y=0; y<game.height; y++) {
+						cells[x][y] = {
+							alive: false,
+							neighbours: 0
+						}
+					}
+				}
+			}
+
+			init_cells(game.cells);
+			init_cells(game.mem_cells);
+
+			// ----------
+			// Game Logic
+			// ----------
+
+			function alive(x, y) {
+				try {
+					if (game.cells[x][y].alive == true) {
+						return true;
+					} else {
+						return false;
+					}
+				} catch(err) {
+					return false;
+				}
+			}
+
+			function update() {
+				for (var x=0; x<game.width; x++) {
+					for (var y=0; y<game.height; y++) {
+						// For each cell
+
+						// Calculate neighbours of cells
+						game.cells[x][y].neighbours = 0;
+						for (var xx=0; xx<3; xx++) {
+							for (var yy=0; yy<3; yy++) {
+								let xxx = x-1+xx;
+								let yyy = y-1+yy;
+								if (xxx != x || yyy != y) {
+									if (alive(xxx, yyy)) { game.cells[x][y].neighbours+=1; }
+								}
+							}
+						}
+					}
+				}
+
+				for (var x=0; x<game.width; x++) {
+					for (var y=0; y<game.height; y++) {
+						// For each cell
+
+						// Calculate mortality to mem_cells, kek
+						if (game.cells[x][y].alive) {
+							// Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
+							if (game.cells[x][y].neighbours < 2) { game.mem_cells[x][y].alive = false; }
+							// Any live cell with two or three live neighbours lives on to the next generation.	
+							if (game.cells[x][y].neighbours == 2 || game.cells[x][y].neighbours == 3) { game.mem_cells[x][y].alive = true; }		
+							// Any live cell with more than three live neighbours dies, as if by overpopulation.
+							if (game.cells[x][y].neighbours > 3) { game.mem_cells[x][y].alive = false; }
+						} else {
+							// Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+							if (game.cells[x][y].neighbours == 3) { game.mem_cells[x][y].alive = true; }
+						}
+					}
+				}
+
+				// Push mem_cells to cells
+				game.cells = game.mem_cells;
+			}
+
+			function draw() {
+				ctx.fillStyle = "#000000";
+				ctx.fillRect(0, 0, canv.width, canv.height);
+
+				for (var x=0; x<game.width; x++) {
+					for (var y=0; y<game.height; y++) {
+						if (game.cells[x][y].alive == true) {
+							// For each cell
+							ctx.fillStyle = "#FFF";
+							ctx.fillRect(x*game.size, y*game.size, game.size, game.size);
+						}
+					}
+				}
+			}
+
+			// ----------
+			// Game Start
+			// ----------
+
+			window.onload = function() {
+				draw(); draw_interval = setInterval(function(){draw()}, game.speed);
+				update(); update_interval = setInterval(function(){update()}, game.speed);
+			}
+
+			// -----------------
+			// In-game Functions
+			// -----------------
+
+			function pause() {
+				clearInterval(draw_interval); draw();
+				clearInterval(update_interval); update()
+				return "The simulation has been paused.";
+			}
+
+			function play() {
+				draw(); draw_interval = setInterval(function(){draw()}, game.speed);
+				update(); update_interval = setInterval(function(){update()}, game.speed);
+				return "The simulation has started."
+			}
+
+			function empty() {
+				init_cells(game.cells);
+				init_cells(game.mem_cells);
+			}
+
+			function speed(ms) {
+				clearInterval(draw_interval);
+				clearInterval(update_interval);
+				game.speed = ms;
+				draw(); draw_interval = setInterval(function(){draw()}, game.speed);
+				update(); update_interval = setInterval(function(){update()}, game.speed);
+				return "Speed set to "+(1000/game.speed).toFixed(2)+" fps ("+game.speed.toFixed(2)+"ms)";
+			}
+
+			function cell_size(px) {
+				game.size = px;
+				canv.width = game.width * game.size;
+				canv.height = game.height * game.size;
+				document.getElementById("title").style.bottom = canv.height+120+"px";
+				document.getElementById("sub-title").style.top = canv.height+120+"px";
+				return "Grid Width: "+game.width+" cells,\nGrid Height: "+game.height+" cells,\nCell size: "+game.size+"px"
+			}
+
+			function on(x, y) { game.cells[x][y].alive = true; return x+", "+y+" is alive"; }
+			function off(x, y) { game.cells[x][y].alive = false; return x+", "+y+" is dead"; }
+
+			function grid_width(cells) {
+				game.width = cells;
+				cell_size(game.size);
+				init_cells(game.cells);
+				init_cells(game.mem_cells);
+				return "Grid Width: "+game.width+" cells,\nGrid Height: "+game.height+" cells,\nCell size: "+game.size+"px"
+			}
+
+			function grid_height(cells) {
+				game.height = cells;
+				cell_size(game.size);
+				init_cells(game.cells);
+				init_cells(game.mem_cells);
+				return "Grid Width: "+game.width+" cells,\nGrid Height: "+game.height+" cells,\nCell size: "+game.size+"px"
+			}
+
+			// https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Examples_of_patterns
+
+			function r_pentomino(x, y) {
+				on(x+1, y);
+				on(x+2, y);
+				on(x, y+1);
+				on(x+1, y+1);
+				on(x+1, y+2);
+				return "R-pentomino drawn at "+x+", "+y
+			}
+
+			function diehard(x, y) {
+				on(x+6, y);
+				on(x, y+1);
+				on(x+1, y+1);
+				on(x+1, y+2);
+				on(x+5, y+2);
+				on(x+6, y+2);
+				on(x+7, y+2);
+				return "Diehard drawn at "+x+", "+y
+			}
+
+			function acorn(x, y) {
+				on(x+1, y);
+				on(x+3, y+1);
+				on(x, y+2);
+				on(x+1, y+2);
+				on(x+4, y+2);
+				on(x+5, y+2);
+				on(x+6, y+2);
+				return "Acorn drawn at "+x+", "+y
+			}
+
+			function pulsar(x, y) {
+				// Row
+				on(x+2, y); on(x+3, y); on(x+4, y); on(x+8, y); on(x+9, y); on(x+10, y);
+				// Walls
+				on(x, y+2); on(x+5, y+2); on(x+7, y+2); on(x+12, y+2);
+				on(x, y+3); on(x+5, y+3); on(x+7, y+3); on(x+12, y+3);
+				on(x, y+4); on(x+5, y+4); on(x+7, y+4); on(x+12, y+4);
+				// Two rows
+				on(x+2, y+5); on(x+3, y+5); on(x+4, y+5); on(x+8, y+5); on(x+9, y+5); on(x+10, y+5);
+				on(x+2, y+7); on(x+3, y+7); on(x+4, y+7); on(x+8, y+7); on(x+9, y+7); on(x+10, y+7);
+				// Walls
+				on(x, y+8); on(x+5, y+8); on(x+7, y+8); on(x+12, y+8);
+				on(x, y+9); on(x+5, y+9); on(x+7, y+9); on(x+12, y+9);
+				on(x, y+10); on(x+5, y+10); on(x+7, y+10); on(x+12, y+10);
+				// Row
+				on(x+2, y+12); on(x+3, y+12); on(x+4, y+12); on(x+8, y+12); on(x+9, y+12); on(x+10, y+12);
+			}
+
+			function commands() { return "==================[ Commands ]==================\ncommands(), pause(), play(), empty(),\n\nspeed(ms), cell_size(px), on/off(x, y),\ngrid_width(cells), grid_height(cells),\n  (changing grid size deletes all cells)\n\nr_pentomino(x, y), diehard(x, y), acorn(x, y),\n\npulsar(x, y)\n================================================"; };
+
+			console.log("▄▄▄▄·  ▄· ▄▌    • ▌ ▄ ·.  ▄▄▄· ▄ •▄ ▪  \n▐█ ▀█▪▐█▪██▌    ·██ ▐███▪▐█ ▀█ █▌▄▌▪██ \n▐█▀▀█▄▐█▌▐█▪    ▐█ ▌▐▌▐█·▄█▀▀█ ▐▀▀▄·▐█·\n██▄▪▐█ ▐█▀·.    ██ ██▌▐█▌▐█ ▪▐▌▐█.█▌▐█▌\n·▀▀▀▀   ▀ •     ▀▀  █▪▀▀▀ ▀  ▀ ·▀  ▀▀▀▀\nMy remake of Conway's Game of Life!\n\nCurrent game settings:\n  Speed: "+(1000/game.speed).toFixed(2)+" fps ("+game.speed.toFixed(2)+"ms), Cell size: "+game.size+"px,\n  Grid Width: "+game.width+" cells, Grid Height: "+game.height+" cells,\n\n"+commands()+"\n\n");
+
+		</script>
+	</body>
+</html>
+
